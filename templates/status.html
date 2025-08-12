@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>处理状态</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f4f7f6 0%, #dfe9e8 100%);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+        #status {
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            color: #555;
+        }
+        #progress {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        #progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--progress-width);
+            background-color: #3498db;
+            transition: width 0.3s ease;
+        }
+        .loader {
+            margin-top: 2rem;
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>正在处理您的文件...</h1>
+    <p id="status">加载中...</p>
+    <progress id="progress" value="0" max="100"></progress>
+    <script>
+        const taskId = '{{ task_id }}';
+        function checkStatus() {
+            fetch(`/status/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').textContent = data.status;
+                    const progress = data.progress;
+                    document.getElementById('progress').style.setProperty('--progress-width', `${progress}%`);
+                    if (progress === 100 && data.result_file) {
+                        window.location.href = `/result/${taskId}`;
+                    } else {
+                        setTimeout(checkStatus, 2000);
+                    }
+                });
+        }
+        checkStatus();
+    </script>
+</body>
+</html>
