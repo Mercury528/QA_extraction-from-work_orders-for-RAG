@@ -59,21 +59,7 @@ QA_extraction_from_work_orders/
 └── results/             # 结果文件目录（本地开发）
 ```
 
-### 2. 配置环境变量
-
-复制 `.env.example` 为 `.env` 并填写实际值：
-
-```bash
-cp .env.example .env
-```
-
-编辑 `.env` 文件：
-```
-DASHSCOPE_API_KEY=你的阿里云百炼API密钥
-SECRET_KEY=你的Flask密钥
-```
-
-### 3. 部署到Vercel
+### 2. 部署到Vercel
 
 #### 方法一：使用Vercel CLI
 
@@ -96,10 +82,7 @@ vercel --prod
 
 1. 将代码推送到GitHub仓库
 2. 在 [Vercel Dashboard](https://vercel.com/dashboard) 导入GitHub仓库
-3. 配置环境变量：
-   - `DASHSCOPE_API_KEY`: 你的阿里云百炼API密钥
-   - `SECRET_KEY`: 随机生成的Flask密钥
-4. 点击部署
+3. 点击部署
 
 ### 4. 配置域名（可选）
 
@@ -145,3 +128,4 @@ vercel --prod
 
 
 如有问题，请检查Vercel部署日志或联系开发团队。
+
