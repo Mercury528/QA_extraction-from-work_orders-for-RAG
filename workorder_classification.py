@@ -219,10 +219,9 @@ def process_file(input_file, output_file, api_key, model_name):
 
 # 主函数
 def main():
-    input_file = "e:\\工作\\QA-match\\order_chat.xlsx"
-    output_file = "e:\\工作\\QA-match\\qa_pairs.xlsx"
-    api_key = "sk-af3b28d2f51b41b8bfa56ed8305ac9d4"  # 警告：请勿在代码中硬编码API密钥
-    
+    input_file = ""
+    output_file = ""
+    api_key = ""  
     process_file(input_file, output_file, api_key)
 
 if __name__ == "__main__":
