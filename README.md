@@ -51,7 +51,6 @@ QA_extraction_from_work_orders/
 ├── app.py                # 主Flask应用
 ├── requirements.txt      # Python依赖
 ├── vercel.json          # Vercel配置
-├── .env.example         # 环境变量模板
 ├── templates/           # HTML模板
 │   ├── index.html
 │   ├── result.html
@@ -143,5 +142,6 @@ vercel --prod
 3. 查看Vercel函数日志获取详细错误信息
 
 ## 技术支持
+
 
 如有问题，请检查Vercel部署日志或联系开发团队。
