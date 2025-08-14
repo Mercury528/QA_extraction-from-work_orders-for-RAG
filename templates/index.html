@@ -5,146 +5,261 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QA问答对提取器</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #f4f7f6 0%, #dfe9e8 100%);
+        * {
             margin: 0;
-            padding: 2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
             color: #333;
-            transition: background 0.5s ease;
         }
+
         .container {
-            background: white;
-            padding: 2.5rem 3.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 550px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
             width: 100%;
-            animation: fadeIn 0.5s ease-in-out;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-section {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            border: 1px solid #ffa726;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .template-title {
+            color: #e65100;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .template-desc {
+            color: #424242;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 126, 95, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
         .input-group {
-            margin-bottom: 1.5rem;
             text-align: left;
+            margin-bottom: 1.5rem;
         }
+
         .input-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: #495057;
         }
+
         .input-group input[type="text"] {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
-            border: 1px solid #ced4da;
-            box-sizing: border-box;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
         }
+
         .input-group input[type="text"]:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
             outline: none;
+            border-color: #ff7e5f;
+            box-shadow: 0 0 0 3px rgba(255, 126, 95, 0.1);
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 1.5rem;
-            font-size: 2rem;
-        }
-        .upload-form {
-            margin-top: 2rem;
-        }
-        .file-input {
-            display: none;
-        }
-        .file-label {
-            background-color: #3498db;
-            color: white;
-            padding: 14px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: inline-block;
+
+        .upload-zone {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
             transition: all 0.3s ease;
-        }
-        .file-label:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(41, 128, 185, 0.2);
-        }
-        .submit-btn {
-            background-color: #2ecc71;
-            color: white;
-            padding: 14px 28px;
-            border: none;
-            border-radius: 8px;
             cursor: pointer;
-            font-size: 1.1rem;
-            margin-top: 1.5rem;
-            transition: all 0.3s ease;
+            margin: 1.5rem 0;
         }
-        .submit-btn:hover {
-            background-color: #27ae60;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+
+        .upload-zone:hover {
+            border-color: #ff7e5f;
+            background: #fff5f3;
         }
+
+        .upload-zone.dragover {
+            border-color: #ff7e5f;
+            background: #ffe8e3;
+            transform: scale(1.02);
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #e8f5e8;
+            border-radius: 6px;
+            color: #2d5a2d;
+            font-weight: 500;
+        }
+
         .flashes {
             list-style: none;
             padding: 0;
-            margin-top: 1.5rem;
+            margin: 1rem 0;
         }
+
         .flashes li {
-            background: #e74c3c;
-            color: white;
-            padding: 12px;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
             border-radius: 8px;
-            margin-bottom: 1rem;
-            animation: fadeIn 0.3s;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #dc3545;
         }
-        #fileName {
-            margin-top: 1rem;
-            font-style: italic;
-            color: #6c757d;
-        }
+
         #loader {
             display: none;
             margin-top: 2rem;
         }
+
         .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
-            border-left-color: #3498db;
-            animation: spin 1s ease infinite;
-            margin: 0 auto;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .progress-text {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>QA问答对提取器</h1>
-        <p>上传一个Excel文件，自动从工单对话中提取问答对。</p>
+        <div class="header">
+            <h1>QA问答对提取器</h1>
+            <p class="subtitle">智能从工单对话中提取问答对，提升数据处理效率</p>
+        </div>
         
-        <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-            <h3 style="margin-top: 0; color: #2c3e50;">📋 使用模板</h3>
-            <p style="margin-bottom: 1rem; color: #6c757d;">请使用标准模板格式上传数据，确保包含必要的工单信息列。</p>
-            <a href="{{ url_for('static', filename='qa_template.xlsx') }}" 
-               style="display: inline-block; background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; transition: background-color 0.3s;" 
-               onmouseover="this.style.backgroundColor='#5a6268'" 
-               onmouseout="this.style.backgroundColor='#6c757d'">
-                📥 下载Excel模板
+        <div class="template-section card">
+            <h3 class="template-title">📋 使用模板</h3>
+            <p class="template-desc">为确保最佳处理效果，请使用标准Excel模板格式上传数据</p>
+            <a href="{{ url_for('static', filename='qa_template.xlsx') }}" class="btn btn-secondary">
+                <span class="icon">📥</span>下载Excel模板
             </a>
         </div>
         
@@ -159,23 +274,31 @@
         {% endwith %}
 
         <form id="uploadForm" class="upload-form" method=post enctype=multipart/form-data>
-            <div class="input-group">
-                <label for="api_key">API密钥</label>
-                <input type="text" id="api_key" name="api_key" placeholder="请输入您的API密钥" required>
+            <div class="card">
+                <div class="input-group">
+                    <label for="api_key">🔑 API密钥</label>
+                    <input type="text" id="api_key" name="api_key" placeholder="请输入您的API密钥" required>
+                </div>
+                
+                <div id="dropZone" class="upload-zone">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;"><strong>点击选择文件或拖拽文件到此处上传</strong></p>
+                    <p style="color: #6c757d; margin-top: 0.5rem;">支持 .xlsx, .xls 格式</p>
+                    <input type="file" name="file" id="file" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(this.files)" style="display: none;">
+                </div>
+                
+                <div id="fileName" style="display: none;" class="file-info">
+                    <span class="icon">📄</span><span id="fileNameText">未选择文件</span>
+                </div>
+                
+                <input type="submit" value="🚀 开始处理" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
             </div>
-            
-            <div id="dropZone" style="border: 2px dashed #ced4da; border-radius: 8px; padding: 2rem; margin: 1.5rem 0; text-align: center; transition: background-color 0.3s;">
-                <p>拖拽Excel文件到这里，或</p>
-                <label for="file" class="file-label">选择文件</label>
-                <input type="file" name="file" id="file" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(this.files)">
-            </div>
-            <p id="fileName">未选择文件</p>
-            <input type="submit" value="上传并处理" class="submit-btn">
         </form>
 
         <div id="loader">
             <div class="spinner"></div>
-            <p>正在处理中... 这可能需要几分钟。</p>
+            <p class="progress-text">正在智能分析您的数据...</p>
+            <p class="progress-text" style="font-size: 0.9rem; margin-top: 0.5rem;">预计需要2-5分钟，请耐心等待</p>
         </div>
     </div>
 
@@ -183,52 +306,89 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('file');
         const fileNameDisplay = document.getElementById('fileName');
+        const fileNameText = document.getElementById('fileNameText');
 
         function handleFileSelect(files) {
             if (files.length > 0) {
                 const file = files[0];
-                if (!file.name.match(/\.xlsx?$/) ) {
+                if (!file.name.match(/\.xlsx?$/)) {
                     alert('请上传Excel文件（.xlsx 或 .xls格式）');
                     fileInput.value = '';
-                    fileNameDisplay.textContent = '未选择文件';
+                    fileNameDisplay.style.display = 'none';
                     return;
                 }
-                fileNameDisplay.textContent = file.name;
+                fileNameText.textContent = file.name;
+                fileNameDisplay.style.display = 'block';
             }
         }
 
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.style.backgroundColor = '#e9ecef';
+            dropZone.classList.add('dragover');
         });
 
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            dropZone.style.backgroundColor = 'transparent';
+            dropZone.classList.remove('dragover');
         });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.style.backgroundColor = 'transparent';
+            dropZone.classList.remove('dragover');
             const files = e.dataTransfer.files;
-            fileInput.files = files;
-            handleFileSelect(files);
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files);
+            }
+        });
+
+        // 点击上传区域也触发文件选择
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
         });
 
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            const apiKey = document.getElementById('api_key').value.trim();
-            if (!apiKey) {
-                e.preventDefault();
-                alert('请提供API密钥');
-                return;
-            }
-            if (!fileInput.files.length) {
-                e.preventDefault();
+            e.preventDefault();
+            const fileInput = document.getElementById('file');
+            if (!fileInput.files || fileInput.files.length === 0) {
                 alert('请选择一个Excel文件');
                 return;
             }
+            
+            const form = this;
+            const formData = new FormData(form);
+            
+            // 添加加载动画
             document.getElementById('loader').style.display = 'block';
-            this.style.display = 'none';
+            form.style.opacity = '0.6';
+            form.style.pointerEvents = 'none';
+            
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('上传失败，请重试');
+                document.getElementById('loader').style.display = 'none';
+                form.style.opacity = '1';
+                form.style.pointerEvents = 'auto';
+            });
+        });
+
+        // 输入框焦点效果
+        document.getElementById('api_key').addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        document.getElementById('api_key').addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
         });
     </script>
 </body>
