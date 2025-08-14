@@ -137,6 +137,17 @@
         <h1>QA问答对提取器</h1>
         <p>上传一个Excel文件，自动从工单对话中提取问答对。</p>
         
+        <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: #2c3e50;">📋 使用模板</h3>
+            <p style="margin-bottom: 1rem; color: #6c757d;">请使用标准模板格式上传数据，确保包含必要的工单信息列。</p>
+            <a href="{{ url_for('static', filename='qa_template.xlsx') }}" 
+               style="display: inline-block; background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; transition: background-color 0.3s;" 
+               onmouseover="this.style.backgroundColor='#5a6268'" 
+               onmouseout="this.style.backgroundColor='#6c757d'">
+                📥 下载Excel模板
+            </a>
+        </div>
+        
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             <ul class=flashes>
