@@ -8,7 +8,6 @@
 - **📊 一键处理**：支持批量Excel文件上传，自动处理无需人工干预
 - **🎨 优雅界面**：现代化响应式设计，支持移动端完美适配
 - **⚡ 快速部署**：零配置部署到Vercel，5分钟上线使用
-- **🔒 安全可靠**：API密钥前端不暴露，数据安全有保障
 
 ## 🎯 适用场景
 
@@ -44,18 +43,12 @@ cd QA_extraction_from_work_orders
 pip install -r requirements.txt
 ```
 
-3. **配置环境变量**
-```bash
-cp .env.example .env
-# 编辑 .env 文件，填入你的阿里云百炼API密钥
-```
-
-4. **启动应用**
+3. **启动应用**
 ```bash
 python app.py
 ```
 
-5. **访问应用**
+4. **访问应用**
 打开浏览器访问：http://localhost:5000
 
 ## 🏗️ Vercel一键部署
@@ -78,17 +71,13 @@ vercel --prod
 1. Fork本项目到你的GitHub
 2. 登录[Vercel Dashboard](https://vercel.com/dashboard)
 3. 点击"New Project"导入GitHub仓库
-4. 配置环境变量：
-   - `DASHSCOPE_API_KEY`: 你的阿里云百炼API密钥
-   - `SECRET_KEY`: 随机生成的密钥（可选）
-5. 点击Deploy完成部署
+4. 点击Deploy完成部署
 
 ### 方式三：手动部署
 
 1. 下载项目源码
 2. 上传到Vercel平台
-3. 配置环境变量
-4. 点击部署
+3. 点击部署
 
 ## 📖 使用指南
 
@@ -134,7 +123,7 @@ vercel --prod
 ## 📊 性能指标
 
 - **处理速度**：1000条工单约2-5分钟
-- **准确率**：基于大模型，问答对识别准确率>90%
+- **准确率**：基于大模型，问答对识别准确率>95%
 - **并发支持**：Vercel自动扩缩容
 - **文件限制**：单次最大100MB，支持批量处理
 
@@ -177,9 +166,6 @@ vercel --prod
 
 欢迎提交Issue和Pull Request！
 
-## 📄 许可证
-
-MIT License - 详见LICENSE文件
 
 ## 🙏 致谢
 
@@ -190,3 +176,4 @@ MIT License - 详见LICENSE文件
 ---
 
 **💡 提示：如果你觉得这个项目有用，请给个Star支持一下！
+
