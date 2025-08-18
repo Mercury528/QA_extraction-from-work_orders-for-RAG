@@ -93,8 +93,10 @@
                     document.getElementById('status').textContent = data.status;
                     const progress = data.progress;
                     document.getElementById('progress').style.setProperty('--progress-width', `${progress}%`);
-                    if (progress === 100 && data.result_file) {
+                    if (progress === 100 && data.qa_count > 0) {
                         window.location.href = `/result/${taskId}`;
+                    } else if (progress === 100) {
+                        setTimeout(checkStatus, 2000);
                     } else {
                         setTimeout(checkStatus, 2000);
                     }
