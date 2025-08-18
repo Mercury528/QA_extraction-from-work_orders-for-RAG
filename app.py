@@ -14,20 +14,17 @@ import threading
 import queue
 import concurrent.futures
 
-UPLOAD_FOLDER = 'uploads'
-RESULT_FOLDER = 'results'
+# 强制内存模式 - 不存储任何文件
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'supersecretkey'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.secret_key = 'your-secret-key-here'  # 请更改为随机字符串
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-if not os.path.exists(RESULT_FOLDER):
-    os.makedirs(RESULT_FOLDER)
+# 禁用文件存储功能
+UPLOAD_FOLDER = None
+RESULT_FOLDER = None
 
 # 存储任务状态
 task_status = {}
@@ -36,10 +33,23 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# 读取Excel文件
-def read_excel(file_path):
+# 读取Excel文件（支持文件路径和文件对象）
+def read_excel(file_input):
     try:
-        df = pd.read_excel(file_path)
+        if isinstance(file_input, str):
+            # 文件路径模式
+            df = pd.read_excel(file_input)
+        else:
+            # 文件对象模式（内存中）
+            # 先将文件内容读取到内存中，避免文件流被关闭
+            from io import BytesIO
+            if hasattr(file_input, 'read'):
+                # 如果是文件流对象
+                file_content = file_input.read()
+                df = pd.read_excel(BytesIO(file_content))
+            else:
+                # 直接传递文件对象
+                df = pd.read_excel(file_input)
         return df
     except Exception as e:
         print(f"读取Excel文件时出错: {e}")
@@ -243,8 +253,8 @@ def clean_qa_pairs(api_key, qa_pairs, task_id):
 
     return cleaned_qa
 
-# 将QA对保存到Excel
-def save_to_excel(qa_pairs, output_file):
+# 将QA对保存到Excel（支持内存和文件两种模式）
+def save_to_excel(qa_pairs, output_file=None, use_memory_mode=False):
     if not qa_pairs:
         df = pd.DataFrame(columns=['work_order_id', 'question', 'answer'])
     else:
@@ -253,11 +263,22 @@ def save_to_excel(qa_pairs, output_file):
         for col in ['work_order_id', 'question', 'answer']:
             if col not in df.columns:
                 df[col] = None
-    df.to_excel(output_file, index=False)
-    logging.info(f"已将QA对保存到 {output_file}")
+    
+    if use_memory_mode or output_file is None:
+        # 内存模式：返回字节流
+        from io import BytesIO
+        output = BytesIO()
+        df.to_excel(output, index=False)
+        output.seek(0)
+        return output
+    else:
+        # 文件模式：保存到磁盘
+        df.to_excel(output_file, index=False)
+        logging.info(f"已将QA对保存到 {output_file}")
+        return output_file
 
-# 处理任务的后台函数
-def process_task(task_id, file_path, api_key):
+# 处理任务的后台函数（支持内存处理）
+def process_task(task_id, file_input, api_key, use_memory_mode=False):
     if not api_key:
         api_key = os.getenv('DASHSCOPE_API_KEY')
         if not api_key:
@@ -269,7 +290,7 @@ def process_task(task_id, file_path, api_key):
         task_status[task_id]['progress'] = 0
         
         # 读取Excel
-        df = read_excel(file_path)
+        df = read_excel(file_input)
         if df is None:
             task_status[task_id]['status'] = "读取Excel文件失败"
             task_status[task_id]['progress'] = 100
@@ -301,13 +322,20 @@ def process_task(task_id, file_path, api_key):
         task_status[task_id]['progress'] = 90
         
         # 保存结果
-        output_file = os.path.join(RESULT_FOLDER, f"{task_id}_cleaned_qa_pairs.xlsx")
-        save_to_excel(cleaned_qa, output_file)
+        use_memory_mode = task_status[task_id].get('use_memory_mode', False)
+        
+        if use_memory_mode:
+            # 内存模式：不存储bytes数据，只在下载时重新生成
+            task_status[task_id]['result_file'] = None
+        else:
+            # 文件模式：保存到磁盘
+            output_file = os.path.join(RESULT_FOLDER, f"{task_id}_cleaned_qa_pairs.xlsx")
+            save_to_excel(cleaned_qa, output_file)
+            task_status[task_id]['result_file'] = output_file
         
         # 更新任务状态
         task_status[task_id]['status'] = f"处理完成！共生成 {len(cleaned_qa)} 个清洗后QA对"
         task_status[task_id]['progress'] = 100
-        task_status[task_id]['result_file'] = output_file
         task_status[task_id]['qa_count'] = len(cleaned_qa)
         task_status[task_id]['cleaned_qa'] = cleaned_qa  # 临时存储以供显示
         
@@ -332,19 +360,23 @@ def upload_file():
                 flash('API密钥是必需的。')
                 return redirect(request.url)
             task_id = str(uuid.uuid4())
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, f"{task_id}_{filename}")
-        file.save(file_path)
-        task_status[task_id] = {
-            'status': '任务已创建',
-            'progress': 0,
-            'result_file': None,
-            'qa_count': 0
+            
+            # 强制使用内存模式 - 直接读取文件内容到内存
+            from io import BytesIO
+            file_content = file.read()
+            file_stream = BytesIO(file_content)
+            
+            task_status[task_id] = {
+                'status': '任务已创建',
+                'progress': 0,
+                'result_file': None,
+                'qa_count': 0,
+                'use_memory_mode': True
             }
-        thread = threading.Thread(target=process_task, args=(task_id, file_path, api_key))
-        thread.daemon = True
-        thread.start()
-        return redirect(url_for('show_status', task_id=task_id))
+            thread = threading.Thread(target=process_task, args=(task_id, file_stream, api_key, True))
+            thread.daemon = True
+            thread.start()
+            return redirect(url_for('show_status', task_id=task_id))
     return render_template('index.html')
 
 @app.route('/status_page/<task_id>')
@@ -353,9 +385,7 @@ def show_status(task_id):
 
 
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+# 移除文件下载功能 - 仅支持内存模式下载
 
 @app.route('/upload', methods=['POST'])
 def upload_file_new():
@@ -377,21 +407,22 @@ def upload_file_new():
     # 生成任务ID
     task_id = str(uuid.uuid4())
     
-    # 保存上传的文件
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(UPLOAD_FOLDER, f"{task_id}_{filename}")
-    file.save(file_path)
+    # 强制使用内存模式 - 直接读取文件内容到内存
+    from io import BytesIO
+    file_content = file.read()
+    file_stream = BytesIO(file_content)
     
     # 初始化任务状态
     task_status[task_id] = {
         'status': '任务已创建',
         'progress': 0,
         'result_file': None,
-        'qa_count': 0
+        'qa_count': 0,
+        'use_memory_mode': True
     }
     
     # 在后台线程中处理任务
-    thread = threading.Thread(target=process_task, args=(task_id, file_path, api_key))
+    thread = threading.Thread(target=process_task, args=(task_id, file_stream, api_key, True))
     thread.daemon = True
     thread.start()
     
@@ -413,14 +444,31 @@ def download_result(task_id):
         return jsonify({'error': '任务不存在'}), 404
     
     task = task_status[task_id]
-    if not task.get('result_file') or not os.path.exists(task['result_file']):
-        return jsonify({'error': '结果文件不存在'}), 404
+    use_memory_mode = task.get('use_memory_mode', False)
     
-    return send_file(
-        task['result_file'],
-        as_attachment=True,
-        download_name=f"qa_pairs_{task_id}.xlsx"
-    )
+    if use_memory_mode:
+        # 内存模式：重新生成Excel文件
+        if 'cleaned_qa' not in task:
+            return jsonify({'error': '结果数据不存在'}), 404
+        
+        from io import BytesIO
+        result_data = save_to_excel(task['cleaned_qa'], use_memory_mode=True)
+        return send_file(
+            result_data,
+            as_attachment=True,
+            download_name=f"qa_pairs_{task_id}.xlsx",
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    else:
+        # 文件模式：从磁盘读取
+        if not task.get('result_file') or not os.path.exists(task['result_file']):
+            return jsonify({'error': '结果文件不存在'}), 404
+        
+        return send_file(
+            task['result_file'],
+            as_attachment=True,
+            download_name=f"qa_pairs_{task_id}.xlsx"
+        )
 
 @app.route('/result/<task_id>', methods=['GET'])
 def show_cleaned_result(task_id):
@@ -438,39 +486,47 @@ def show_cleaned_result(task_id):
 def submit_selection(task_id):
     if task_id not in task_status:
         return jsonify({'error': '任务不存在'}), 404
+    
     selected_indices = request.form.getlist('selected')
     cleaned_qa = task_status[task_id]['cleaned_qa']
     final_qa = [cleaned_qa[int(idx)] for idx in selected_indices if idx.isdigit()]
-    final_file = os.path.join(RESULT_FOLDER, f"{task_id}_final_qa_pairs.xlsx")
-    save_to_excel(final_qa, final_file)
-    task_status[task_id]['final_file'] = final_file
+    
+    use_memory_mode = task_status[task_id].get('use_memory_mode', False)
+    
+    # 不存储bytes数据，只在下载时重新生成
+    task_status[task_id]['final_qa'] = final_qa
+    task_status[task_id]['final_file'] = None
+    
     return jsonify({'message': '筛选完成', 'download_url': url_for('download_final', task_id=task_id)})
 
 @app.route('/download_final/<task_id>')
 def download_final(task_id):
     if task_id not in task_status:
         return jsonify({'error': '任务不存在'}), 404
+    
     task = task_status[task_id]
-    if 'final_file' not in task or not os.path.exists(task['final_file']):
-        return jsonify({'error': '最终文件不存在'}), 404
-    return send_file(task['final_file'], as_attachment=True, download_name=f"final_qa_pairs_{task_id}.xlsx")
+    use_memory_mode = task_status[task_id].get('use_memory_mode', False)
+    
+    # 内存模式：重新生成Excel文件
+    if 'final_qa' not in task:
+        return jsonify({'error': '最终数据不存在'}), 404
+    
+    from io import BytesIO
+    final_data = save_to_excel(task['final_qa'], use_memory_mode=True)
+    return send_file(
+        final_data,
+        as_attachment=True,
+        download_name=f"final_qa_pairs_{task_id}.xlsx",
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Vercel无服务器适配
-app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-app.config['RESULT_FOLDER'] = '/tmp/results'
-
-# 确保模板目录路径正确（Vercel环境）
+# 纯内存模式 - 不需要文件存储配置
+# 使用templates copy目录
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app.template_folder = template_dir
-
-# 确保临时目录存在
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-if not os.path.exists(app.config['RESULT_FOLDER']):
-    os.makedirs(app.config['RESULT_FOLDER'])
 
 # Vercel入口点
 if __name__ == '__main__':
